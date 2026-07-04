@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
@@ -9,6 +10,7 @@ import ChatPage from "./pages/ChatPage";
 
 export default function App() {
   return (
+    <ThemeProvider>
     <AuthProvider>
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -23,5 +25,6 @@ export default function App() {
         <Route path="*" element={<Navigate to="/chat" replace />} />
       </Routes>
     </AuthProvider>
+    </ThemeProvider>
   );
 }

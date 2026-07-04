@@ -10,8 +10,6 @@
   position: fixed;
   inset: 0 30% 0 0;
   z-index: 30;
-  display: flex;
-  flex-direction: column;
   background: var(--color-surface);
   border-right: 1px solid var(--color-border);
   transform: translateX(-100%);
@@ -26,6 +24,18 @@
   background: rgba(22, 41, 30, 0.4);
   z-index: 20;
 }
+
+/* Fixed-width inner wrapper. The outer .sidebar is what animates
+   (transform on mobile, width on desktop) - keeping the actual
+   content at a constant width means nothing reflows/wraps mid-animation,
+   it just gets revealed or clipped. */
+.sidebar-content {
+  width: 280px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .sidebar-header {
   display: flex;
   align-items: center;
@@ -63,6 +73,7 @@
   margin-bottom: 2px;
   cursor: pointer;
   text-align: left;
+  color: var(--color-ink);
 }
 .scan-item:hover {
   background: var(--color-bg);
@@ -79,6 +90,36 @@
   font-size: 12px;
   color: var(--color-ink-soft);
 }
+
+/* ---------------- Theme switcher ---------------- */
+.theme-switcher {
+  display: flex;
+  gap: 4px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 3px;
+  margin: 4px 16px 12px;
+  flex-shrink: 0;
+}
+.theme-switcher-btn {
+  flex: 1;
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  padding: 7px 0;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-ink-soft);
+  transition: background 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+}
+.theme-switcher-btn-active {
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  color: var(--color-ink);
+}
+
 .sidebar-footer {
   border-top: 1px solid var(--color-border);
   padding: 14px 16px;
@@ -86,6 +127,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  flex-shrink: 0;
 }
 .sidebar-user {
   font-weight: 600;
@@ -100,8 +142,15 @@
     position: static;
     inset: auto;
     transform: none;
-    width: 280px;
+    width: 0;
     flex-shrink: 0;
+    border-right: none;
+    overflow: hidden;
+    transition: width 0.2s ease, border-color 0.2s ease;
+  }
+  .sidebar-open {
+    width: 280px;
+    border-right: 1px solid var(--color-border);
   }
   .sidebar-overlay {
     display: none;
@@ -115,6 +164,9 @@
   flex-direction: column;
   min-width: 0;
 }
+
+/* Topbar now stays visible at every breakpoint - the ☰ button is the
+   persistent sidebar toggle, same as most chat-style AI apps. */
 .topbar {
   display: flex;
   align-items: center;
@@ -130,6 +182,7 @@
   cursor: pointer;
   color: var(--color-paddy);
   line-height: 1;
+  flex-shrink: 0;
 }
 .topbar-title {
   font-family: var(--font-display);
@@ -138,11 +191,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-@media (min-width: 768px) {
-  .topbar {
-    display: none;
-  }
 }
 
 .empty-state {
@@ -244,7 +292,7 @@
 }
 .quick-replies button:hover {
   background: var(--color-paddy);
-  color: #fff;
+  color: var(--color-on-accent);
   border-color: var(--color-paddy);
 }
 
@@ -272,7 +320,7 @@
 }
 .bubble-user {
   background: var(--color-paddy);
-  color: #fff;
+  color: var(--color-on-accent);
   border-bottom-right-radius: 4px;
 }
 .bubble-time {
@@ -330,6 +378,7 @@
   padding: 0 16px;
   font-size: 15px;
   background: var(--color-bg);
+  color: var(--color-ink);
 }
 .composer input[type="text"]:focus {
   border-color: var(--color-paddy);
@@ -340,13 +389,14 @@
   border-radius: 50%;
   border: none;
   background: var(--color-bg);
+  color: var(--color-ink);
   font-size: 18px;
   cursor: pointer;
   flex-shrink: 0;
 }
 .composer-send {
   background: var(--color-paddy);
-  color: #fff;
+  color: var(--color-on-accent);
 }
 .composer-send:disabled {
   background: var(--color-border);
