@@ -6,12 +6,18 @@ import Sidebar from "../components/Sidebar";
 import ChatWindow from "../components/ChatWindow";
 import "../styles/chat.css";
 
+const DESKTOP_BREAKPOINT = 768;
+function getDefaultSidebarOpen() {
+  if (typeof window === "undefined") return false;
+  return window.innerWidth >= DESKTOP_BREAKPOINT;
+}
+
 export default function ChatPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [scans, setScans] = useState([]);
   const [activeScanId, setActiveScanId] = useState(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(getDefaultSidebarOpen);
   const [loadingScans, setLoadingScans] = useState(true);
 
   useEffect(() => {
@@ -26,23 +32,25 @@ export default function ChatPage() {
   const handleScanCreated = (scan) => {
     setScans((prev) => [scan, ...prev]);
     setActiveScanId(scan.id);
-    setSidebarOpen(false);
+    if (!getDefaultSidebarOpen()) setSidebarOpen(false);
   };
 
   const handleSelect = (scanId) => {
     setActiveScanId(scanId);
-    setSidebarOpen(false);
+    if (!getDefaultSidebarOpen()) setSidebarOpen(false);
   };
 
   const handleNewScan = () => {
     setActiveScanId(null);
-    setSidebarOpen(false);
+    if (!getDefaultSidebarOpen()) setSidebarOpen(false);
   };
 
   const handleLogout = async () => {
     await logout();
     navigate("/login");
   };
+
+  const handleToggleSidebar = () => setSidebarOpen((open) => !open);
 
   return (
     <div className="chat-shell">
@@ -63,7 +71,7 @@ export default function ChatPage() {
           </p>
         </div>
       ) : (
-        <ChatWindow activeScan={activeScan} onScanCreated={handleScanCreated} onOpenSidebar={() => setSidebarOpen(true)} />
+        <ChatWindow activeScan={activeScan} onScanCreated={handleScanCreated} onOpenSidebar={handleToggleSidebar} />
       )}
     </div>
   );

@@ -1,8 +1,13 @@
+import ThemeSwitcher from "./ThemeSwitcher";
+
 export default function Sidebar({ scans, activeScanId, onSelect, onNewScan, isOpen, onClose, user, onLogout }) {
   return (
     <>
       {isOpen && <div className="sidebar-overlay" onClick={onClose} />}
       <aside className={`sidebar ${isOpen ? "sidebar-open" : ""}`}>
+        {/* Fixed-width inner wrapper so content doesn't reflow while the
+            outer .sidebar animates its width open/closed on desktop. */}
+        <div className="sidebar-content">
         <div className="sidebar-header">
           <span className="leaf">🌱</span>
           <span className="sidebar-brand">PaddyPal</span>
@@ -30,11 +35,14 @@ export default function Sidebar({ scans, activeScanId, onSelect, onNewScan, isOp
           ))}
         </div>
 
+          <ThemeSwitcher />
+
         <div className="sidebar-footer">
           <span className="sidebar-user">{user?.name}</span>
           <button className="btn btn-ghost" onClick={onLogout}>
             Log out
           </button>
+        </div>
         </div>
       </aside>
     </>

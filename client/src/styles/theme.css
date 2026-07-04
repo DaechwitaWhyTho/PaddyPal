@@ -2,9 +2,14 @@
    ------------------------------------------------------------------
    <link rel="preconnect" href="https://fonts.googleapis.com">
    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-   ------------------------------------------------------------------ */
+   ------------------------------------------------------------------
+   Theme switching: <html> gets a data-theme attribute ("bright" |
+   "dark" | "mixed") set by ThemeContext. :root / [data-theme="bright"]
+   is the default so the app still looks right before ThemeProvider
+   has run (e.g. first paint). */
 
-:root {
+:root,
+[data-theme="bright"] {
   /* Palette grounded in the crop itself: pale husk background, deep
      paddy green for healthy, ripening gold for caution, and the
      rust-blotch red that rice blast/brown spot lesions actually turn. */
@@ -18,6 +23,7 @@
   --color-rust: #b5482e;
   --color-sky: #5c7a89;
   --color-border: #dce3d1;
+  --color-on-accent: #ffffff;
 
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-body: "Inter", system-ui, sans-serif;
@@ -27,6 +33,43 @@
   --radius-md: 14px;
   --radius-lg: 20px;
   --shadow-card: 0 2px 10px rgba(22, 41, 30, 0.08);
+}
+
+/* Dark: a clean, neutral dark UI. Same paddy-green accent, but the
+   surrounding surfaces are true dark-gray/black rather than tinted. */
+[data-theme="dark"] {
+  --color-bg: #14161a;
+  --color-surface: #1d2024;
+  --color-ink: #e7e9ec;
+  --color-ink-soft: #9aa0a8;
+  --color-paddy: #3a8f63;
+  --color-paddy-dark: #2c7350;
+  --color-gold: #c9a24a;
+  --color-rust: #c76650;
+  --color-sky: #6f92a3;
+  --color-border: #2c2f34;
+  --color-on-accent: #ffffff;
+
+  --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+
+/* Mixed: a dark paddy-field mood. Bg/surface keep a deep green tint
+   instead of neutral gray, and gold runs warmer, so it reads as
+   "night in the field" rather than a generic dark mode. */
+[data-theme="mixed"] {
+  --color-bg: #1b2420;
+  --color-surface: #24312b;
+  --color-ink: #f2f5ec;
+  --color-ink-soft: #a9baa9;
+  --color-paddy: #3a8f63;
+  --color-paddy-dark: #2c7350;
+  --color-gold: #e8b84b;
+  --color-rust: #e2745a;
+  --color-sky: #7fa8b8;
+  --color-border: #3a473f;
+  --color-on-accent: #ffffff;
+
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
 
 * {
@@ -45,6 +88,7 @@ body {
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 h1,
 h2,
@@ -55,6 +99,7 @@ h3 {
 }
 button {
   font-family: inherit;
+  color: inherit;
 }
 a {
   color: var(--color-paddy);
@@ -89,7 +134,7 @@ a {
 }
 .btn-primary {
   background: var(--color-paddy);
-  color: #fff;
+  color: var(--color-on-accent);
 }
 .btn-primary:hover:not(:disabled) {
   background: var(--color-paddy-dark);
