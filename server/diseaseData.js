@@ -44,14 +44,20 @@ export const RISK_CONDITIONS = riskRaw.map((r) => ({
   affected_level: r.affected_level, // low | moderate | high | critical | none
 }));
 
-// Order remedies are shown in, and which categories we even bother with
-const REMEDY_CATEGORY_ORDER = ["প্রতিরোধক", "কৃষিপ্রক্রিয়াগত", "রাসায়নিক", "পরামর্শ"];
+// Order remedies are shown in, and which categories we even bother with.
+// Normalized to NFC so this matches CSV values regardless of which Unicode
+// normalization form the Bengali text happens to be saved in — otherwise
+// visually-identical strings can fail strict equality and silently drop
+// entire categories.
+const REMEDY_CATEGORY_ORDER = ["প্রতিরোধক", "কৃষিপ্রক্রিয়াগত", "রাসায়নিক", "পরামর্শ"].map((s) =>
+  s.normalize("NFC")
+);
 
 // code -> { category -> [remedy strings] }
 export const REMEDIES = {};
 for (const row of remediesRaw) {
   const code = row.disease_code;
-  const category = row["শ্রেণী"];
+  const category = (row["শ্রেণী"] || "").normalize("NFC").trim();
   const text = row["প্রতিকার"];
   if (!REMEDIES[code]) REMEDIES[code] = {};
   if (!REMEDIES[code][category]) REMEDIES[code][category] = [];
