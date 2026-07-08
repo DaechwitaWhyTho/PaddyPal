@@ -95,6 +95,8 @@ export default function ChatWindow({ activeScan, onScanCreated, onScanUpdated, o
             riskLevel={detail.risk_level}
             confidence={detail.scan?.confidence_score ?? activeScan.confidence_score}
             remedies={detail.remedies}
+            symptoms={detail.symptoms}
+            varietySensitivity={detail.variety_sensitivity}
           />
         )}
 
