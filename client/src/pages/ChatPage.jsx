@@ -52,6 +52,10 @@ export default function ChatPage() {
 
   const handleToggleSidebar = () => setSidebarOpen((open) => !open);
 
+  const handleScanUpdated = (updatedScan) => {
+    setScans((prev) => prev.map((s) => (s.id === updatedScan.id ? updatedScan : s)));
+  };
+
   return (
     <div className="chat-shell">
       <Sidebar

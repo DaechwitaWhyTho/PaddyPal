@@ -38,18 +38,19 @@ export const resetPassword = (data) =>
 ---------------------------------------------------------------------- */
 export const fetchScans = () => api.get("/api/scans").then((r) => r.data.data);
 
+// Step 1: upload photo -> candidate diseases (nothing final yet)
 export const createScan = (imageFile) => {
   const formData = new FormData();
   formData.append("leafImage", imageFile);
   return api
-    .post("/api/scan", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    })
-    .then((r) => r.data.data); // the inserted scan_history row
+    .post("/api/scan", formData, { headers: { "Content-Type": "multipart/form-data" } })
+    .then((r) => r.data.data); // scan row with .candidates, disease_code still null
 };
 
-export const fetchMessages = (scanId) =>
-  api.get(`/api/scan/${scanId}/messages`).then((r) => r.data.data);
+// Step 2: user picks young/adult/old -> final disease + remedies
+export const diagnoseScan = (scanId, ageGroup) =>
+  api.post(`/api/scan/${scanId}/diagnose`, { age_group: ageGroup }).then((r) => r.data.data);
+  // { scan, disease, risk_level, remedies }
 
-export const sendMessage = (scanId, message) =>
-  api.post("/api/chat", { scan_id: scanId, message }).then((r) => r.data.data); // the saved assistant message row
+// Re-open a previously diagnosed scan from the sidebar
+export const fetchScanDetail = (scanId) => api.get(`/api/scan/${scanId}`).then((r) => r.data.data);
