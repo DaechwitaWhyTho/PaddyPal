@@ -1,0 +1,11 @@
+code,name_en,name_bn,disease_type,disease_cause,description
+blast,Rice Blast,ধানের ব্লাস্ট,fungal,Pyricularia oryzae,Fungal disease affecting leaves
+blb,Bacterial Leaf Blight,পাতা ঝলসানো রোগ,bacterial,Xanthomonas oryzae,Bacterial Vascular Disease
+bls,Bacterial Leaf Streak,পাতার রেখা রোগ,bacterial,Xanthomonas oryzae,Bacterial Parenchyma (Foliar) Disease
+bpb,Bacterial Panicle Blight,ধানের শীষ ঝলসানো রোগ,bacterial,Burkholderia glumae,Bacterial Panicle and Vascular Disease
+bspot,Brown Spot,ধানের বাদামী দাগ রোগ,fungal,Bipolaris oryzae,Fungal Foliar and Grain Disease
+dh,Dead Heart,মরা ডগা,pest,"Yellow Stem Borer, Striped Stem Borer,  White Stem Borer",Insect Pest Damage
+dm,Downy Mildew,ধানের ক্রেজি টপ রোগ,fungal,Sclerophthora macrospora,Fungal-like Oomycete Disease
+hispa,Rice Hispa,ধানের পামরী পোকা,pest,Dicladispa armigera,oliar Insect Pest Damage
+tungro,Rice Tungro,ধানের টুংরো রোগ,viral,"Rice Tungro Bacilliform Virus, Rice Tungro Spherical Virus, vector Green Leafhopper",Vector-Borne Viral Disease Complex
+normal,Healthy Rice Plant,সুস্থ ধান,n/a,n/a,healthy rice plant

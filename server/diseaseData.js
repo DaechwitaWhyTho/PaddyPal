@@ -4,7 +4,7 @@ import { fileURLToPath } from "url";
 import { parse } from "csv-parse/sync";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname,"..", "data");
+const DATA_DIR = path.join(__dirname, "data");
 
 function loadCsv(filename) {
   const raw = fs.readFileSync(path.join(DATA_DIR, filename), "utf-8");
