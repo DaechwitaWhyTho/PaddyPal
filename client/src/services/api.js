@@ -7,7 +7,7 @@ export const api = axios.create({ baseURL: API_URL });
 
 // Attach the JWT to every request once the user is logged in
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("paddypal_token");
+  const token = localStorage.getItem("onnoprohori_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });

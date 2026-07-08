@@ -6,7 +6,7 @@ import { generateToken } from "./generateToken.js";
 /**
  * POST /api/auth/register
  * Body: { name, email, password, phone }
- * PaddyPal has a single user type — every account can scan crops
+ * OnnoProhori has a single user type — every account can scan crops
  * and chat about the results, so there's no role/address/store logic.
  */
 export const register = async (req, res) => {
@@ -153,14 +153,14 @@ export const forgotPassword = async (req, res) => {
     });
 
     await transporter.sendMail({
-      from: `"PaddyPal" <${process.env.GMAIL_USER}>`,
+      from: `"OnnoProhori" <${process.env.GMAIL_USER}>`,
       to: email,
-      subject: "Your PaddyPal Password Reset OTP",
+      subject: "Your OnnoProhori Password Reset OTP",
       text: `Your OTP is: ${otp}\n\nThis code expires in 5 minutes. Do not share it with anyone.`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 480px; margin: auto; padding: 24px; border: 1px solid #eee; border-radius: 8px;">
           <h2 style="color: #333;">Password Reset Request</h2>
-          <p style="color: #555;">Use the OTP below to reset your PaddyPal password. It expires in <strong>5 minutes</strong>.</p>
+          <p style="color: #555;">Use the OTP below to reset your OnnoProhori password. It expires in <strong>5 minutes</strong>.</p>
           <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; text-align: center; padding: 20px; background: #f5f5f5; border-radius: 6px; color: #111;">
             ${otp}
           </div>

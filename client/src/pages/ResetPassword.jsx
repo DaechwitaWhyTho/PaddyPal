@@ -50,7 +50,7 @@ export default function ResetPassword() {
       <div className="auth-card">
         <div className="auth-brand">
           <span className="leaf">🌱</span>
-          <span>PaddyPal</span>
+          <span>OnnoProhori</span>
         </div>
         <h1>Enter your code</h1>
         <p className="subtitle">Check your email for the 6-digit code.</p>

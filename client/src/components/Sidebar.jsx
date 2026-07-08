@@ -10,7 +10,7 @@ export default function Sidebar({ scans, activeScanId, onSelect, onNewScan, isOp
         <div className="sidebar-content">
         <div className="sidebar-header">
           <span className="leaf">🌱</span>
-          <span className="sidebar-brand">PaddyPal</span>
+          <span className="sidebar-brand">OnnoProhori</span>
         </div>
 
         <button className="btn btn-primary new-scan-btn" onClick={onNewScan}>

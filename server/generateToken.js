@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-// Single user type for PaddyPal — no role to branch on, just the user_id
+// Single user type for OnnoProhori — no role to branch on, just the user_id
 export const generateToken = (userId) => {
   const payload = { user_id: userId };
 

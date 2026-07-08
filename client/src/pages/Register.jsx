@@ -24,7 +24,7 @@ export default function Register() {
       <div className="auth-card">
         <div className="auth-brand">
           <span className="leaf">🌱</span>
-          <span>PaddyPal</span>
+          <span>OnnoProhori</span>
         </div>
         <h1>Create your account</h1>
         <p className="subtitle">Scan your paddy crop and get answers in seconds.</p>

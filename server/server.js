@@ -25,7 +25,7 @@ const upload = multer({
   },
 });
 
-app.get('/', (req, res) => res.send('PaddyPal server is alive 🌱'));
+app.get('/', (req, res) => res.send('OnnoProhori server is alive 🌱'));
 
 /**
  * STEP 1 — upload a leaf photo, get back the model's candidate diseases.
