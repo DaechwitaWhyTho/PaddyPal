@@ -4,7 +4,7 @@ import multer from 'multer';
 
 import sql from './db.js';
 import { predictDisease } from './aiClient.js';
-import { pickBestDisease, getRemedies, getDiseaseMeta } from './diseaseData.js';
+import { pickBestDisease, getRemedies, getDiseaseMeta, getSymptoms, getVarietySensitivity } from './diseaseData.js';
 import authRoutes from './authRoutes.js';
 import authMiddleware from './authMiddleware.js';
 
@@ -94,17 +94,19 @@ app.post('/api/scan/:id/diagnose', authMiddleware, async (req, res) => {
     const { best } = pickBestDisease(candidates, age_group);
     const meta = getDiseaseMeta(best.disease_code);
     const remedies = best.disease_code === 'normal' ? [] : getRemedies(best.disease_code);
+    const symptoms = best.disease_code === 'normal' ? [] : getSymptoms(best.disease_code, age_group);
+    const varietySensitivity = best.disease_code === 'normal' ? [] : getVarietySensitivity(best.disease_code);
 
     const updated = await sql`
-      UPDATE scan_history
-      SET disease_code = ${best.disease_code},
-          disease_name = ${meta?.name_en || best.disease_code},
-          confidence_score = ${best.confidence},
-          crop_age_group = ${age_group},
-          risk_level = ${best.risk_level}
-      WHERE id = ${scan.id}
-      RETURNING *
-    `;
+  UPDATE scan_history
+  SET disease_code = ${best.disease_code},
+      disease_name = ${meta?.name_en || best.disease_code},
+      confidence_score = ${best.confidence},
+      crop_age_group = ${age_group},
+      risk_level = ${best.risk_level}
+  WHERE id = ${scan.id}
+  RETURNING *
+`;
 
     return res.status(200).json({
       success: true,
@@ -113,6 +115,8 @@ app.post('/api/scan/:id/diagnose', authMiddleware, async (req, res) => {
         disease: meta,
         risk_level: best.risk_level,
         remedies,
+        symptoms,
+        variety_sensitivity: varietySensitivity,
       },
     });
   } catch (err) {
@@ -132,9 +136,15 @@ app.get('/api/scan/:id', authMiddleware, async (req, res) => {
     }
     const scan = rows[0];
     const meta = scan.disease_code ? getDiseaseMeta(scan.disease_code) : null;
-    const remedies = scan.disease_code && scan.disease_code !== 'normal' ? getRemedies(scan.disease_code) : [];
+    const isReal = scan.disease_code && scan.disease_code !== 'normal';
+    const remedies = isReal ? getRemedies(scan.disease_code) : [];
+    const symptoms = isReal ? getSymptoms(scan.disease_code, scan.crop_age_group) : [];
+    const varietySensitivity = isReal ? getVarietySensitivity(scan.disease_code) : [];
 
-    res.json({ success: true, data: { scan, disease: meta, risk_level: scan.risk_level, remedies } });
+    res.json({
+      success: true,
+      data: { scan, disease: meta, risk_level: scan.risk_level, remedies, symptoms, variety_sensitivity: varietySensitivity },
+    });
   } catch (err) {
     console.error('Fetch scan error:', err.message);
     res.status(500).json({ success: false, message: 'Failed to fetch scan' });

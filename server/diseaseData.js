@@ -14,6 +14,8 @@ function loadCsv(filename) {
 const diseasesRaw = loadCsv("OnnoProhori - diseases_master.csv");
 const riskRaw = loadCsv("OnnoProhori - risk_conditions.csv");
 const remediesRaw = loadCsv("OnnoProhori - remedies.csv");
+const varietyRaw = loadCsv("OnnoProhori - variety_sensitivity.csv");
+const symptomsRaw = loadCsv("OnnoProhori - symptoms_variants.csv");
 
 export const CODE_MAP = {
   "bacterial_leaf_blight": "blb",
@@ -55,6 +57,35 @@ for (const row of remediesRaw) {
   if (!REMEDIES[code][category]) REMEDIES[code][category] = [];
   REMEDIES[code][category].push(text);
 }
+
+// code -> [{ variety, risk_level }]
+export const VARIETY_SENSITIVITY = {};
+for (const row of varietyRaw) {
+  const code = row.disease_code;
+  if (!VARIETY_SENSITIVITY[code]) VARIETY_SENSITIVITY[code] = [];
+  VARIETY_SENSITIVITY[code].push({
+    variety: row.variety.trim(),
+    risk_level: row.risk_level,
+  });
+}
+
+// code -> { growth_stage -> [symptom, ...] }
+export const SYMPTOMS = {};
+for (const row of symptomsRaw) {
+  const code = row.disease_code;
+  const stage = row.growth_stage;
+  if (!SYMPTOMS[code]) SYMPTOMS[code] = {};
+  if (!SYMPTOMS[code][stage]) SYMPTOMS[code][stage] = [];
+  SYMPTOMS[code][stage].push(row.symptom);
+}
+
+// A crop in "adult"/"old" has already passed through earlier growth
+// stages, so stages accumulate rather than being mutually exclusive.
+const AGE_GROUP_STAGES = {
+  young: ["Seedling"],
+  adult: ["Seedling", "Tillering"],
+  old: ["Seedling", "Tillering", "Panicle", "Maturity"],
+};
 
 // How much an age-bucket's risk level should boost/discount model confidence
 const RISK_WEIGHT = { critical: 1.5, high: 1.25, moderate: 1.0, low: 0.75, none: 0.5 };
@@ -112,4 +143,20 @@ export function getRemedies(diseaseCode) {
 export function getDiseaseMeta(diseaseCode) {
   const code = CODE_MAP[diseaseCode] || diseaseCode;
   return DISEASES[code] || null;
+}
+
+/** All varieties on record for a disease, with their susceptibility level. */
+export function getVarietySensitivity(diseaseCode) {
+  const code = CODE_MAP[diseaseCode] || diseaseCode;
+  return VARIETY_SENSITIVITY[code] || [];
+}
+
+/** Symptoms relevant to the disease at (up to) the crop's current age bucket. */
+export function getSymptoms(diseaseCode, ageGroup) {
+  const code = CODE_MAP[diseaseCode] || diseaseCode;
+  const grouped = SYMPTOMS[code] || {};
+  const stages = AGE_GROUP_STAGES[ageGroup] || Object.keys(grouped);
+  return stages
+    .filter((stage) => grouped[stage]?.length)
+    .map((stage) => ({ stage, items: grouped[stage] }));
 }
