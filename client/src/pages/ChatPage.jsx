@@ -75,7 +75,12 @@ export default function ChatPage() {
           </p>
         </div>
       ) : (
-        <ChatWindow activeScan={activeScan} onScanCreated={handleScanCreated} onOpenSidebar={handleToggleSidebar} />
+        <ChatWindow
+          activeScan={activeScan}
+          onScanCreated={handleScanCreated}
+          onScanUpdated={handleScanUpdated}
+          onOpenSidebar={handleToggleSidebar}
+        />
       )}
     </div>
   );

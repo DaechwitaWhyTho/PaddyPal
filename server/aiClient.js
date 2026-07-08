@@ -1,3 +1,5 @@
+import { CODE_MAP } from "./diseaseData.js";
+
 async function predictDisease(imageBuffer, originalFilename, mimetype) {
   const form = new FormData();
   const blob = new Blob([imageBuffer], { type: mimetype });
@@ -28,7 +30,7 @@ async function predictDisease(imageBuffer, originalFilename, mimetype) {
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, 5)
     .map((p) => ({
-      disease_code: p.name,
+      disease_code: CODE_MAP[p.name] || p.name,
       confidence: +p.confidence.toFixed(4),
     }));
 }

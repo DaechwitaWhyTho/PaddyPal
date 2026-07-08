@@ -4,16 +4,31 @@ import { fileURLToPath } from "url";
 import { parse } from "csv-parse/sync";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, "data");
+const DATA_DIR = path.join(__dirname,"..", "data");
 
 function loadCsv(filename) {
   const raw = fs.readFileSync(path.join(DATA_DIR, filename), "utf-8");
   return parse(raw, { columns: true, skip_empty_lines: true, trim: true });
 }
 
-const diseasesRaw = loadCsv("OnnoProhori__diseases_master.csv");
-const riskRaw = loadCsv("OnnoProhori__risk_conditions.csv");
-const remediesRaw = loadCsv("OnnoProhori__remedies.csv");
+const diseasesRaw = loadCsv("OnnoProhori - diseases_master.csv");
+const riskRaw = loadCsv("OnnoProhori - risk_conditions.csv");
+const remediesRaw = loadCsv("OnnoProhori - remedies.csv");
+
+export const CODE_MAP = {
+  "bacterial_leaf_blight": "blb",
+  "bacterial_leaf_streak": "bls",
+  "brown_spot": "bspot",
+  "dead_heart": "dh",
+  "downy_mildew": "dm",
+  "blast": "blast",
+  "hispa": "hispa",
+  "tungro": "tungro",
+  "normal": "normal",
+  "bacterial_panicle_blight": "bpb",
+  "rice_blast": "blast",
+  "rice_hispa": "hispa",
+};
 
 // code -> { name_en, name_bn, disease_type, disease_cause, description }
 export const DISEASES = Object.fromEntries(diseasesRaw.map((d) => [d.code, d]));
@@ -49,11 +64,12 @@ const AGE_GROUP_DAYS = { young: 15, adult: 45, old: 100 };
 
 /** Look up the affected_level for a disease at a given age bucket. */
 export function getAgeRiskLevel(diseaseCode, ageGroup) {
+  const code = CODE_MAP[diseaseCode] || diseaseCode;
   const day = AGE_GROUP_DAYS[ageGroup];
   if (day == null) return null;
   const match = RISK_CONDITIONS.find(
     (r) =>
-      r.disease_code === diseaseCode &&
+      r.disease_code === code &&
       r.condition_type === "crop_age_days" &&
       r.operator === "between" &&
       day >= r.min_val &&
@@ -69,10 +85,11 @@ export function getAgeRiskLevel(diseaseCode, ageGroup) {
 export function pickBestDisease(candidates, ageGroup) {
   const scored = candidates
     .map((c) => {
-      const level = getAgeRiskLevel(c.disease_code, ageGroup);
+      const code = CODE_MAP[c.disease_code] || c.disease_code;
+      const level = getAgeRiskLevel(code, ageGroup);
       const weight = RISK_WEIGHT[level] ?? 1.0; // unknown -> neutral, no boost/penalty
       return {
-        disease_code: c.disease_code,
+        disease_code: code,
         confidence: c.confidence,
         risk_level: level || "unknown",
         score: c.confidence * weight,
@@ -84,7 +101,8 @@ export function pickBestDisease(candidates, ageGroup) {
 }
 
 export function getRemedies(diseaseCode) {
-  const grouped = REMEDIES[diseaseCode] || {};
+  const code = CODE_MAP[diseaseCode] || diseaseCode;
+  const grouped = REMEDIES[code] || {};
   return REMEDY_CATEGORY_ORDER.filter((cat) => grouped[cat]?.length).map((cat) => ({
     category: cat,
     items: grouped[cat],
@@ -92,5 +110,6 @@ export function getRemedies(diseaseCode) {
 }
 
 export function getDiseaseMeta(diseaseCode) {
-  return DISEASES[diseaseCode] || null;
+  const code = CODE_MAP[diseaseCode] || diseaseCode;
+  return DISEASES[code] || null;
 }
