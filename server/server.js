@@ -3,8 +3,8 @@ import cors from 'cors';
 import multer from 'multer';
 
 import sql from './db.js';
-import { callLLM } from './llm.js';
 import { predictDisease } from './aiClient.js';
+import { pickBestDisease, getRemedies, getDiseaseMeta, getSymptoms, getVarietySensitivity } from './diseaseData.js';
 import authRoutes from './authRoutes.js';
 import authMiddleware from './authMiddleware.js';
 
@@ -25,23 +25,24 @@ const upload = multer({
   },
 });
 
-app.get('/', (req, res) => res.send('PaddyPal server is alive 🌱'));
+app.get('/', (req, res) => res.send('OnnoProhori server is alive 🌱'));
 
+/**
+ * STEP 1 — upload a leaf photo, get back the model's candidate diseases.
+ * Nothing is "final" yet — disease_code/confidence_score stay null until
+ * the user answers the crop-age question.
+ */
 app.post('/api/scan', authMiddleware, upload.single('leafImage'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, message: 'No image file uploaded' });
     }
 
-    const { disease_name, confidence_score } = await predictDisease(
-      req.file.buffer,
-      req.file.originalname,
-      req.file.mimetype
-    );
+    const candidates = await predictDisease(req.file.buffer, req.file.originalname, req.file.mimetype);
 
     const result = await sql`
-      INSERT INTO scan_history (image_name, disease_name, confidence_score, user_id)
-      VALUES (${req.file.originalname}, ${disease_name}, ${confidence_score}, ${req.user.user_id})
+      INSERT INTO scan_history (image_name, candidates, user_id)
+      VALUES (${req.file.originalname}, ${JSON.stringify(candidates)}, ${req.user.user_id})
       RETURNING *
     `;
 
@@ -52,7 +53,6 @@ app.post('/api/scan', authMiddleware, upload.single('leafImage'), async (req, re
   }
 });
 
-// NEW — this route was missing entirely
 app.get('/api/scans', authMiddleware, async (req, res) => {
   try {
     const scans = await sql`
@@ -67,68 +67,101 @@ app.get('/api/scans', authMiddleware, async (req, res) => {
   }
 });
 
-app.post('/api/chat', authMiddleware, async (req, res) => {
+/**
+ * STEP 2 — user answers "young / adult / old". Combine that with the
+ * candidate list's confidences + the risk_conditions table to settle on
+ * one disease, then attach its remedies, symptoms, and variety sensitivity.
+ */
+app.post('/api/scan/:id/diagnose', authMiddleware, async (req, res) => {
   try {
-    const { scan_id, message } = req.body;
-    if (!scan_id || !message || !message.trim()) {
-      return res.status(400).json({ success: false, message: 'scan_id and message are required' });
+    const { age_group } = req.body;
+    if (!['young', 'adult', 'old'].includes(age_group)) {
+      return res.status(400).json({ success: false, message: 'age_group must be young, adult, or old' });
     }
 
-    // ownership check added — prevents asking questions about someone else's scan
-    const scanRows = await sql`
-      SELECT * FROM scan_history WHERE id = ${scan_id} AND user_id = ${req.user.user_id}
+    const rows = await sql`
+      SELECT * FROM scan_history WHERE id = ${req.params.id} AND user_id = ${req.user.user_id}
     `;
-    if (scanRows.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Scan not found' });
     }
-    const scan = scanRows[0];
+    const scan = rows[0];
+    const candidates = scan.candidates || [];
+    if (candidates.length === 0) {
+      return res.status(400).json({ success: false, message: 'This scan has no candidate diseases to diagnose' });
+    }
 
-    await sql`INSERT INTO chat_messages (scan_id, role, content) VALUES (${scan_id}, 'user', ${message})`;
+    const { best } = pickBestDisease(candidates, age_group);
+    const meta = getDiseaseMeta(best.disease_code);
+    const isReal = best.disease_code !== 'normal';
+    const remedies = isReal ? getRemedies(best.disease_code) : [];
+    const symptoms = isReal ? getSymptoms(best.disease_code, age_group) : [];
+    const varietySensitivity = isReal ? getVarietySensitivity(best.disease_code) : [];
 
-    const history = await sql`
-      SELECT role, content FROM chat_messages WHERE scan_id = ${scan_id} ORDER BY created_at ASC
-    `;
-
-    const reply = await callLLM({
-      diseaseName: scan.disease_name,
-      confidenceScore: scan.confidence_score,
-      conversationHistory: history,
-      userMessage: message,
-    });
-
-    const savedReply = await sql`
-      INSERT INTO chat_messages (scan_id, role, content) VALUES (${scan_id}, 'assistant', ${reply})
+    const updated = await sql`
+      UPDATE scan_history
+      SET disease_code = ${best.disease_code},
+          disease_name = ${meta?.name_en || best.disease_code},
+          confidence_score = ${best.confidence},
+          crop_age_group = ${age_group},
+          risk_level = ${best.risk_level}
+      WHERE id = ${scan.id}
       RETURNING *
     `;
 
-    return res.status(200).json({ success: true, data: savedReply[0] });
+    return res.status(200).json({
+      success: true,
+      data: {
+        scan: updated[0],
+        disease: meta,
+        risk_level: best.risk_level,
+        remedies,
+        symptoms,
+        variety_sensitivity: varietySensitivity,
+      },
+    });
   } catch (err) {
-    console.error('Chat error:', err.message);
-    return res.status(500).json({ success: false, message: 'Failed to process chat message' });
+    console.error('Diagnose error:', err.message);
+    return res.status(500).json({ success: false, message: 'Failed to diagnose scan' });
   }
 });
 
-app.get('/api/scan/:id/messages', authMiddleware, async (req, res) => {
+/** Re-fetch a previously diagnosed scan's remedies (for revisiting from the sidebar). */
+app.get('/api/scan/:id', authMiddleware, async (req, res) => {
   try {
-    // ownership check — without this, any logged-in user could read any scan's messages by guessing the id
-    const owned = await sql`
-      SELECT id FROM scan_history WHERE id = ${req.params.id} AND user_id = ${req.user.user_id}
+    const rows = await sql`
+      SELECT * FROM scan_history WHERE id = ${req.params.id} AND user_id = ${req.user.user_id}
     `;
-    if (owned.length === 0) {
+    if (rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Scan not found' });
     }
+    const scan = rows[0];
+    const meta = scan.disease_code ? getDiseaseMeta(scan.disease_code) : null;
+    const isReal = scan.disease_code && scan.disease_code !== 'normal';
+    const remedies = isReal ? getRemedies(scan.disease_code) : [];
+    const symptoms = isReal ? getSymptoms(scan.disease_code, scan.crop_age_group) : [];
+    const varietySensitivity = isReal ? getVarietySensitivity(scan.disease_code) : [];
 
-    const messages = await sql`
-      SELECT * FROM chat_messages
-      WHERE scan_id = ${req.params.id}
-      ORDER BY created_at ASC
-    `;
-    res.json({ success: true, data: messages });
+    res.json({
+      success: true,
+      data: {
+        scan,
+        disease: meta,
+        risk_level: scan.risk_level,
+        remedies,
+        symptoms,
+        variety_sensitivity: varietySensitivity,
+      },
+    });
   } catch (err) {
-    console.error('Fetch messages error:', err.message);
-    res.status(500).json({ success: false, message: 'Failed to fetch messages' });
+    console.error('Fetch scan error:', err.message);
+    res.status(500).json({ success: false, message: 'Failed to fetch scan' });
   }
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
+
+export default app;

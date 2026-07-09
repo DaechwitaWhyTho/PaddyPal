@@ -1,13 +1,38 @@
-// Isolated AI-service client. Swap the mock body below for a real axios
-// call to your teammates' FastAPI /predict endpoint once it's deployed.
-// Nothing else in the app needs to change when you do that swap.
+import { CODE_MAP } from "./diseaseData.js";
 
 async function predictDisease(imageBuffer, originalFilename, mimetype) {
-  // ---- MOCK IMPLEMENTATION ----
-  const mockDiseases = ['Bacterial Leaf Blight', 'Brown Spot', 'Leaf Smut', 'Healthy'];
-  const disease_name = mockDiseases[Math.floor(Math.random() * mockDiseases.length)];
-  const confidence_score = +(0.75 + Math.random() * 0.24).toFixed(4);
-  return { disease_name, confidence_score };
+  const form = new FormData();
+  const blob = new Blob([imageBuffer], { type: mimetype });
+  form.append("file", blob, originalFilename);
+  form.append("conf", "0.25");
+  form.append("iou", "0.7");
+  form.append("imgsz", "640");
+
+  const response = await fetch(process.env.AI_SERVICE_URL, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.AI_SERVICE_API_KEY}` },
+    body: form,
+  });
+
+  if (!response.ok) {
+    throw new Error(`AI service returned ${response.status}: ${await response.text()}`);
+  }
+
+  const result = await response.json();
+  const predictions = result?.images?.[0]?.results;
+  if (!predictions || predictions.length === 0) {
+    throw new Error("AI service returned no predictions");
+  }
+
+  // Top 5 candidates, sorted, confidence rounded — this is the list the
+  // frontend shows/uses before the user picks a crop-age bucket.
+  return [...predictions]
+    .sort((a, b) => b.confidence - a.confidence)
+    .slice(0, 5)
+    .map((p) => ({
+      disease_code: CODE_MAP[p.name] || p.name,
+      confidence: +p.confidence.toFixed(4),
+    }));
 }
 
 export { predictDisease };

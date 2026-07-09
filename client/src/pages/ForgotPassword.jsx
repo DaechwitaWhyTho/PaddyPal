@@ -29,7 +29,7 @@ export default function ForgotPassword() {
       <div className="auth-card">
         <div className="auth-brand">
           <span className="leaf">🌱</span>
-          <span>PaddyPal</span>
+          <span>OnnoProhori</span>
         </div>
         <h1>Reset your password</h1>
         <p className="subtitle">We'll email you a 6-digit code.</p>

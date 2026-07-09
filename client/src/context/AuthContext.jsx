@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { loginUser, registerUser, fetchMe, logoutUser } from "../services/api";
 
 const AuthContext = createContext(null);
-const TOKEN_KEY = "paddypal_token";
+const TOKEN_KEY = "onnoprohori_token";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);

@@ -1,33 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { fetchMessages, sendMessage, createScan } from "../services/api";
-import DiagnosisCard from "./DiagnosisCard";
-import MessageBubble from "./MessageBubble";
+import { createScan, diagnoseScan, fetchScanDetail } from "../services/api";
+import AgeSelector from "./AgeSelector";
+import RemedyCard from "./RemedyCard";
 
-export default function ChatWindow({ activeScan, onScanCreated, onOpenSidebar }) {
-  const [messages, setMessages] = useState([]);
-  const [loadingMessages, setLoadingMessages] = useState(false);
-  const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
+export default function ChatWindow({ activeScan, onScanCreated, onScanUpdated, onOpenSidebar }) {
   const [uploading, setUploading] = useState(false);
+  const [diagnosing, setDiagnosing] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [detail, setDetail] = useState(null); // { disease, risk_level, remedies }
   const [error, setError] = useState("");
   const fileInputRef = useRef(null);
-  const scrollRef = useRef(null);
 
   useEffect(() => {
-    if (!activeScan) {
-      setMessages([]);
-      return;
+    setError("");
+    setDetail(null);
+    if (!activeScan) return;
+
+    if (activeScan.disease_code) {
+      // Already-diagnosed scan opened from the sidebar — reload its remedies.
+      setLoadingDetail(true);
+      fetchScanDetail(activeScan.id)
+        .then(setDetail)
+        .catch(() => setError("Couldn't load this scan."))
+        .finally(() => setLoadingDetail(false));
     }
-    setLoadingMessages(true);
-    fetchMessages(activeScan.id)
-      .then(setMessages)
-      .catch(() => setError("Couldn't load this conversation."))
-      .finally(() => setLoadingMessages(false));
   }, [activeScan]);
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, activeScan]);
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0];
@@ -36,7 +33,7 @@ export default function ChatWindow({ activeScan, onScanCreated, onOpenSidebar })
     setError("");
     try {
       const scan = await createScan(file);
-      onScanCreated(scan);
+      onScanCreated(scan); // scan.candidates present, scan.disease_code is null
     } catch {
       setError("Couldn't read that photo. Try a clearer shot of the leaf.");
     } finally {
@@ -45,27 +42,19 @@ export default function ChatWindow({ activeScan, onScanCreated, onOpenSidebar })
     }
   };
 
-  const handleAsk = async (question) => {
-    if (!activeScan || sending) return;
-    setSending(true);
+  const handleAgeSelect = async (ageGroup) => {
+    if (!activeScan) return;
+    setDiagnosing(true);
     setError("");
-    const optimistic = { role: "user", content: question, created_at: new Date().toISOString() };
-    setMessages((prev) => [...prev, optimistic]);
     try {
-      const message = await sendMessage(activeScan.id, question);
-      setMessages((prev) => [...prev, message]);
+      const result = await diagnoseScan(activeScan.id, ageGroup);
+      setDetail(result);
+      onScanUpdated(result.scan); // updates disease_name in the sidebar list
     } catch {
-      setError("PaddyPal couldn't answer that just now — try again.");
+      setError("Couldn't finish the diagnosis — try again.");
     } finally {
-      setSending(false);
+      setDiagnosing(false);
     }
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!text.trim()) return;
-    handleAsk(text.trim());
-    setText("");
   };
 
   const fileInput = (
@@ -92,53 +81,34 @@ export default function ChatWindow({ activeScan, onScanCreated, onOpenSidebar })
 
   return (
     <div className="chat-main">
-      <Topbar onOpenSidebar={onOpenSidebar} title={activeScan.disease_name} />
-      <div className="messages" ref={scrollRef}>
-        <DiagnosisCard
-          diseaseName={activeScan.disease_name}
-          confidenceScore={activeScan.confidence_score}
-          onAsk={handleAsk}
-        />
-        {loadingMessages && (
-          <p className="helper-text" style={{ padding: 16 }}>
-            Loading conversation…
-          </p>
+      <Topbar onOpenSidebar={onOpenSidebar} title={activeScan.disease_name || "Diagnosing…"} />
+      <div className="messages">
+        {loadingDetail && <p className="helper-text" style={{ padding: 16 }}>Loading…</p>}
+
+        {!activeScan.disease_code && !loadingDetail && (
+          <AgeSelector onSelect={handleAgeSelect} loading={diagnosing} />
         )}
-        {messages.map((m, i) => (
-          <MessageBubble key={m.id || i} role={m.role} content={m.content} created_at={m.created_at} />
-        ))}
-        {sending && (
-          <div className="bubble-row">
-            <div className="bubble bubble-bot typing-dots">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-          </div>
+
+        {detail?.disease && (
+          <RemedyCard
+            disease={detail.disease}
+            riskLevel={detail.risk_level}
+            confidence={detail.scan?.confidence_score ?? activeScan.confidence_score}
+            remedies={detail.remedies}
+            symptoms={detail.symptoms}
+            varietySensitivity={detail.variety_sensitivity}
+          />
         )}
+
+        {error && <p className="error-text">{error}</p>}
       </div>
 
-      {error && (
-        <p className="error-text" style={{ padding: "0 16px" }}>
-          {error}
-        </p>
-      )}
-
-      <form className="composer" onSubmit={handleSubmit}>
-        <button type="button" className="composer-icon-btn" onClick={() => fileInputRef.current?.click()} title="New scan">
-          📷
+      <div className="composer composer-scan-only">
+        <button className="btn btn-ghost" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          📷 {uploading ? "Reading photo…" : "New scan"}
         </button>
         {fileInput}
-        <input
-          type="text"
-          placeholder="Ask about causes, treatment, prevention…"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-        <button type="submit" className="composer-icon-btn composer-send" disabled={!text.trim() || sending}>
-          ➤
-        </button>
-      </form>
+      </div>
     </div>
   );
 }

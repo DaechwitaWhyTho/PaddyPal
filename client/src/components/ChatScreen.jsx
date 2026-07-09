@@ -57,7 +57,7 @@ function ChatScreen() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', maxWidth: 480, margin: '0 auto' }}>
       <header style={{ padding: '14px 16px', borderBottom: '1px solid #eee', fontWeight: 600 }}>
-        🌱 PaddyPal
+        🌱 OnnoProhori
       </header>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: 16 }}>

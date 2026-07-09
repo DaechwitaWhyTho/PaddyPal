@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
-const STORAGE_KEY = "paddypal-theme";
+const STORAGE_KEY = "onnoprohori-theme";
 const THEMES = ["bright", "dark", "mixed"];
 const DEFAULT_THEME = "bright";
 

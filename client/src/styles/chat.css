@@ -411,3 +411,86 @@
     animation: none;
   }
 }
+
+.age-select-card,
+.remedy-card {
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+  border-left: 4px solid var(--color-paddy);
+  padding: 16px;
+  max-width: 520px;
+}
+
+.age-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+.age-option-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  cursor: pointer;
+}
+.age-option-btn:hover:not(:disabled) {
+  border-color: var(--color-paddy);
+}
+.age-option-label {
+  font-weight: 700;
+  color: var(--color-paddy);
+}
+.age-option-helper {
+  font-size: 12px;
+  color: var(--color-ink-soft);
+}
+
+.remedy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.remedy-en {
+  font-size: 13px;
+  color: var(--color-ink-soft);
+  font-weight: 500;
+}
+.remedy-meta {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--color-ink-soft);
+}
+.remedy-group {
+  margin-top: 14px;
+}
+.remedy-group h4 {
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--color-paddy);
+  margin-bottom: 6px;
+}
+.remedy-group ul {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+}
+.remedy-healthy {
+  color: var(--color-paddy);
+  font-weight: 600;
+}
+.composer-scan-only {
+  justify-content: center;
+}
